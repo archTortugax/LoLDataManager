@@ -1,0 +1,6 @@
+{
+    "languages" : ["lolData/untarLoLData/languages.json"],
+    "version" : ["lolData/untarLoLData/version.json"],
+    "items" : ["lolData/untarLoLData/", "/data/", "/item.json"],
+    "itemfullimage" : ["lolData/untarLoLData/", "/img/item/", ""]
+}

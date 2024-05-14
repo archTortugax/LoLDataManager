@@ -16,8 +16,10 @@ def main():
     v = versions[0]
     print(v)
     filename = f"dragontail-{v}.tgz"
-    urllib.request.urlretrieve(f"https://ddragon.leagueoflegends.com/cdn/{filename}", filename) 
+    urllib.request.urlretrieve(f"https://ddragon.leagueoflegends.com/cdn/{filename}", filename)
     extract(filename, "./untarLoLData")
+    with open("./untarLoLData/version.json", "w") as f:
+        f.write(f"\"{v}\"")
 
 if __name__ == "__main__":
     main()
