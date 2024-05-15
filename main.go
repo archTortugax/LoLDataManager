@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
+	"regexp"
 )
 
 // useful funcs
@@ -98,8 +100,10 @@ type LoLChampions struct {
 }
 
 type LoLChampion struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	Id       string   `json:"id"`
+	Name     string   `json:"name"`
+	Tags     []string `json:"tags"`
+	Metadata []string
 }
 
 type LoLSummoners struct {
@@ -160,6 +164,18 @@ func getLoLChampions(language string) LoLChampions {
 	return champs
 }
 
+func (loLChampion LoLChampion) regexMatchChampion(reLoLChamp LoLChampion) bool {
+	valReLoLChamp := reflect.ValueOf(reLoLChamp)
+	valloLChampion := reflect.ValueOf(loLChampion)
+	for i := 0; i < valReLoLChamp.NumField(); i++ {
+		fieldValueReLoLChamp := valReLoLChamp.Field(i)
+		fieldValueLoLChampion := valloLChampion.Field(i)
+		regexp.Compile(fieldValueReLoLChamp.String())
+	}
+
+	return false
+}
+
 func getLoLSummoners(language string) LoLSummoners {
 	var summs LoLSummoners = LoLSummoners{}
 	err := loadFileInStruct(generateLink(lolDataLinks.SummonersLink, []string{lolDataVersion, language}), &summs)
@@ -210,4 +226,9 @@ func (lolDataManager *LoLDataManager) updateData() {
 
 func main() {
 	test := NewLoLDataManager()
+	fmt.Println(test.Champions.Data)
+	for k, v := range test.Champions.Data {
+		fmt.Println(k)
+		fmt.Println(v.Metadata)
+	}
 }
