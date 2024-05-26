@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"reflect"
-	"regexp"
 )
 
 // useful funcs
@@ -80,7 +78,7 @@ var loadDataVersionError error = loadFileInStruct(generateLink(lolDataLinks.Vers
 // kinda cursed ^^
 var _ any = checkLoadings()
 
-// handling data
+// handling data structs
 
 type LoLLanguages []string
 
@@ -88,11 +86,38 @@ type LoLItems struct {
 	Data map[string]LoLItem `json:"data"`
 }
 
+/*
+   "gold": {
+       "base": 300,
+       "purchasable": true,
+       "total": 300,
+       "sell": 210
+   },
+   "tags": [
+       "Boots"
+   ],
+   "maps": {
+       "11": true,
+       "12": true,
+       "21": true,
+       "22": false,
+       "30": false
+   },
+*/
+
 type LoLItem struct {
-	Name  string `json:"name"`
-	Image struct {
-		Full string `json:"full"`
-	} `json:"image"`
+	ItemKey string
+	Name    string   `json:"name"`
+	From    []string `json:"from"`
+	Into    []string `json:"into"`
+	Gold    struct {
+		Base        int `json:"base"`
+		Purchasable bool `json:"purchasable"`
+		Total       int `json:"total"`
+	} `json:"gold"`
+	Tags     []string        `json:"tags"`
+	Maps     map[string]bool `json:"maps"`
+	Metadata []string
 }
 
 type LoLChampions struct {
@@ -130,6 +155,8 @@ type LoLRune struct {
 	Name string `json:"name"`
 }
 
+// LoLLanguages methods
+
 func getLoLLanguages() LoLLanguages {
 	var languages LoLLanguages = LoLLanguages{}
 	err := loadFileInStruct(generateLink(lolDataLinks.LanguagesLink, []string{}), &languages)
@@ -144,15 +171,63 @@ func (lolLanguages LoLLanguages) getBaseLoLLanguage() string {
 	return lolLanguages[0]
 }
 
+// LoLItems methods
+
 func getLoLItems(language string) LoLItems {
 	var items LoLItems = LoLItems{}
 	err := loadFileInStruct(generateLink(lolDataLinks.ItemsLink, []string{lolDataVersion, language}), &items)
+
+	for key, item := range items.Data {
+		item.ItemKey = key
+
+		if !item.hasChildren() {
+			item.Metadata = append(item.Metadata, "final")
+		}
+
+		if !item.hasParents() {
+			item.Metadata = append(item.Metadata, "base")
+		}
+
+		items.Data[key] = item
+	}
+
 	if err != nil {
 		fmt.Println(err.Error())
 		panic("Error in loading Items")
 	}
 	return items
 }
+
+func (lolItems LoLItems) getLoLItem(num string) LoLItem {
+	var lolItem LoLItem = lolItems.Data[num]
+	return lolItem
+}
+
+func (lolItem LoLItem) getLoLItemParents(lolItems LoLItems) []LoLItem {
+	var parents []LoLItem = []LoLItem{}
+	for _, e := range lolItem.From {
+		parents = append(parents, lolItems.getLoLItem(e))
+	}
+	return parents
+}
+
+func (lolItem LoLItem) getLoLItemChildren(lolItems LoLItems) []LoLItem {
+	var children []LoLItem = []LoLItem{}
+	for _, e := range lolItem.Into {
+		children = append(children, lolItems.getLoLItem(e))
+	}
+	return children
+}
+
+func (lolItem LoLItem) hasParents() bool {
+	return len(lolItem.From) > 0
+}
+
+func (lolItem LoLItem) hasChildren() bool {
+	return len(lolItem.Into) > 0
+}
+
+// LoLLanguages methods
 
 func getLoLChampions(language string) LoLChampions {
 	var champs LoLChampions = LoLChampions{}
@@ -164,17 +239,7 @@ func getLoLChampions(language string) LoLChampions {
 	return champs
 }
 
-func (loLChampion LoLChampion) regexMatchChampion(reLoLChamp LoLChampion) bool {
-	valReLoLChamp := reflect.ValueOf(reLoLChamp)
-	valloLChampion := reflect.ValueOf(loLChampion)
-	for i := 0; i < valReLoLChamp.NumField(); i++ {
-		fieldValueReLoLChamp := valReLoLChamp.Field(i)
-		fieldValueLoLChampion := valloLChampion.Field(i)
-		regexp.Compile(fieldValueReLoLChamp.String())
-	}
-
-	return false
-}
+// LoLLanguages methods
 
 func getLoLSummoners(language string) LoLSummoners {
 	var summs LoLSummoners = LoLSummoners{}
@@ -185,6 +250,8 @@ func getLoLSummoners(language string) LoLSummoners {
 	}
 	return summs
 }
+
+// LoLLanguages methods
 
 func getLoLRunes(language string) LoLRunes {
 	var runes LoLRunes = LoLRunes{}
@@ -226,9 +293,9 @@ func (lolDataManager *LoLDataManager) updateData() {
 
 func main() {
 	test := NewLoLDataManager()
-	fmt.Println(test.Champions.Data)
-	for k, v := range test.Champions.Data {
-		fmt.Println(k)
-		fmt.Println(v.Metadata)
-	}
+	testitems := test.Items
+	item := testitems.getLoLItem("3067")
+	fmt.Println(item)
+	fmt.Println(item.getLoLItemParents(testitems))
+	fmt.Println(item.getLoLItemChildren(testitems))
 }
