@@ -111,9 +111,9 @@ type LoLItem struct {
 	From    []string `json:"from"`
 	Into    []string `json:"into"`
 	Gold    struct {
-		Base        int `json:"base"`
+		Base        int  `json:"base"`
 		Purchasable bool `json:"purchasable"`
-		Total       int `json:"total"`
+		Total       int  `json:"total"`
 	} `json:"gold"`
 	Tags     []string        `json:"tags"`
 	Maps     map[string]bool `json:"maps"`
@@ -291,7 +291,7 @@ func (lolDataManager *LoLDataManager) updateData() {
 
 // main
 
-func main() {
+func Test() {
 	test := NewLoLDataManager()
 	testitems := test.Items
 	item := testitems.getLoLItem("3067")
